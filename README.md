@@ -11,24 +11,28 @@ are placeholders.
 
 ## How it works
 
+![Workflow: a Jenkins plan run saves plans to S3, the viewer lists and renders them, and approval triggers a Jenkins apply-saved job](docs/diagrams/workflow.png)
+
+Each plan run writes one folder to the bucket:
+
 ```
- Jenkins "plan" run ──► s3://<bucket>/<environment>/<timestamp>/
-                          plan.txt        terraform show output
-                          metadata.json   {"timestamp", "git_commit", "build_number", ...}
-                          status.json     {"status": "pending", "created_at", "updated_at"}
-                                  │
-                                  ▼
-             terraform-plan-viewer (Django, no database)
-               /                       environments + latest plan + last 5 plans
-               /plan/<env>/<ts>/        full plan text, metadata, staleness banner
-               POST /plan/<env>/<ts>/approve/
-                   status.json -> "approved"
-                   Jenkins buildWithParameters:
-                     ACTION=apply-saved ENVIRONMENT=<env> PLAN_ID=<env>/<ts>
-                     TRIGGER_ANSIBLE=true|false
-                   (on trigger failure, status goes back to "pending")
-               /health/                 liveness/readiness probe
+s3://<bucket>/<environment>/<timestamp>/
+  plan.txt        terraform show output
+  metadata.json   {"timestamp", "git_commit", "build_number", ...}
+  status.json     {"status": "pending", "created_at", "updated_at"}
 ```
+
+Routes:
+
+- `/`: environments, the latest plan and the last 5 plans for each.
+- `/plan/<env>/<ts>/`: full plan text, metadata and a staleness banner.
+- `POST /plan/<env>/<ts>/approve/`: sets `status.json` to `approved` and calls
+  Jenkins `buildWithParameters` with `ACTION=apply-saved`,
+  `ENVIRONMENT=<env>`, `PLAN_ID=<env>/<ts>` and `TRIGGER_ANSIBLE=true|false`.
+  If the trigger fails, the status goes back to `pending`.
+- `/health/`: liveness/readiness probe.
+
+Notes:
 
 - **No database.** S3 is the only state. Top-level prefixes are environments.
   A prefix or plan folder named `latest` is ignored.

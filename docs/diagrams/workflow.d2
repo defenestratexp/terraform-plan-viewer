@@ -1,0 +1,24 @@
+direction: down
+
+plan: "Jenkins plan run\n(terraform plan)"
+
+s3: "S3 bucket\n<environment>/<timestamp>/\nplan.txt, metadata.json, status.json" {shape: cylinder}
+
+viewer: "terraform-plan-viewer (Django, no database, no auth)" {
+  direction: down
+  dash: "/\nenvironments, latest plan,\nlast 5 plans"
+  detail: "/plan/<env>/<ts>/\nfull plan text, metadata,\nstaleness banner (1 h / 24 h)"
+  approve: "POST .../approve/\nonly if status is pending or failed"
+  dash -> detail -> approve
+}
+
+operator: "operator" {shape: person}
+
+apply: "Jenkins apply job\nACTION=apply-saved\nENVIRONMENT, PLAN_ID, TRIGGER_ANSIBLE"
+
+plan -> s3: "upload plan + status pending"
+s3 -> viewer.dash: "list / read"
+operator -> viewer.dash: "browse"
+viewer.approve -> s3: "status.json = approved\n(back to pending if the trigger fails)"
+viewer.approve -> apply: "buildWithParameters"
+s3 -> apply: "saved plan (PLAN_ID)" {style.stroke-dash: 3}
