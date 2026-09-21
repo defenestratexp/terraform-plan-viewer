@@ -1,0 +1,16 @@
+{% extends "plans/base.html" %}
+
+{% block title %}Error - Terraform Plans{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 20px;">
+    <a href="/" style="color: var(--text-secondary);">&larr; Back to Dashboard</a>
+</div>
+
+<div class="card">
+    <h2>Error</h2>
+    <div class="alert alert-error">
+        {{ error }}
+    </div>
+</div>
+{% endblock %}

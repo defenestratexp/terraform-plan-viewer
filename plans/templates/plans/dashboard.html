@@ -1,0 +1,86 @@
+{% extends "plans/base.html" %}
+
+{% block title %}Dashboard - Terraform Plans{% endblock %}
+
+{% block content %}
+<h2 style="margin-bottom: 20px;">Environments</h2>
+
+{% if not environments %}
+<div class="card">
+    <p style="color: var(--text-secondary);">No plans found. Run a Terraform plan via Jenkins to see results here.</p>
+</div>
+{% endif %}
+
+{% for env in environments %}
+<div class="card">
+    <h2>{{ env.name }}</h2>
+
+    {% if env.latest %}
+    <div class="meta-grid" style="margin-bottom: 20px;">
+        <div class="meta-item">
+            <label>Latest Plan</label>
+            <span>{{ env.latest.timestamp }}</span>
+        </div>
+        <div class="meta-item">
+            <label>Status</label>
+            <span class="badge badge-{{ env.latest.status.status }}">
+                {{ env.latest.status.status }}
+            </span>
+        </div>
+        <div class="meta-item">
+            <label>Age</label>
+            <span class="staleness-{{ env.latest.staleness.level }}">
+                {{ env.latest.staleness.message }}
+            </span>
+        </div>
+        <div class="meta-item">
+            <label>Git Commit</label>
+            <span>{{ env.latest.metadata.git_commit|default:"-"|truncatechars:8 }}</span>
+        </div>
+    </div>
+
+    <a href="{% url 'plan_detail' env.latest.plan_id %}" class="btn btn-primary">View Latest Plan</a>
+    {% else %}
+    <p style="color: var(--text-secondary);">No plans available for this environment.</p>
+    {% endif %}
+
+    {% if env.plan_count > 1 %}
+    <details style="margin-top: 20px;">
+        <summary style="cursor: pointer; color: var(--text-secondary);">
+            View {{ env.plan_count }} total plans
+        </summary>
+        <table style="margin-top: 15px;">
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Status</th>
+                    <th>Build</th>
+                    <th>Age</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for plan in env.plans %}
+                <tr>
+                    <td>{{ plan.timestamp }}</td>
+                    <td>
+                        <span class="badge badge-{{ plan.status.status }}">
+                            {{ plan.status.status }}
+                        </span>
+                    </td>
+                    <td>{{ plan.metadata.build_number|default:"-" }}</td>
+                    <td class="staleness-{{ plan.staleness.level }}">
+                        {{ plan.staleness.message }}
+                    </td>
+                    <td>
+                        <a href="{% url 'plan_detail' plan.plan_id %}">View</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </details>
+    {% endif %}
+</div>
+{% endfor %}
+{% endblock %}

@@ -1,0 +1,85 @@
+{% extends "plans/base.html" %}
+
+{% block title %}{{ plan.plan_id }} - Terraform Plans{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 20px;">
+    <a href="/" style="color: var(--text-secondary);">&larr; Back to Dashboard</a>
+</div>
+
+<div class="card">
+    <h2>{{ plan.environment }} / {{ plan.timestamp }}</h2>
+
+    {% if plan.staleness.level == "warning" %}
+    <div class="alert alert-warning">
+        {{ plan.staleness.message }} - Consider running a fresh plan before applying.
+    </div>
+    {% elif plan.staleness.level == "critical" %}
+    <div class="alert alert-error">
+        {{ plan.staleness.message }} - This plan is very old and may not reflect current infrastructure state.
+    </div>
+    {% endif %}
+
+    <div class="meta-grid">
+        <div class="meta-item">
+            <label>Status</label>
+            <span class="badge badge-{{ plan.status.status }}">
+                {{ plan.status.status }}
+            </span>
+        </div>
+        <div class="meta-item">
+            <label>Environment</label>
+            <span>{{ plan.environment }}</span>
+        </div>
+        <div class="meta-item">
+            <label>Created</label>
+            <span>{{ plan.metadata.timestamp|default:plan.timestamp }}</span>
+        </div>
+        <div class="meta-item">
+            <label>Git Commit</label>
+            <span>{{ plan.metadata.git_commit|default:"-" }}</span>
+        </div>
+        <div class="meta-item">
+            <label>Build Number</label>
+            <span>{{ plan.metadata.build_number|default:"-" }}</span>
+        </div>
+        <div class="meta-item">
+            <label>Plan ID</label>
+            <span style="font-family: monospace; font-size: 0.85rem;">{{ plan.plan_id }}</span>
+        </div>
+    </div>
+</div>
+
+{% if plan.status.status == "pending" or plan.status.status == "failed" %}
+<div class="card">
+    <h2>Approve Plan</h2>
+
+    {% if not jenkins_status.available %}
+    <div class="alert alert-error">
+        Jenkins is not available: {{ jenkins_status.error }}
+    </div>
+    {% endif %}
+
+    <form method="post" action="{% url 'approve_plan' plan.plan_id %}">
+        {% csrf_token %}
+        <div style="margin-bottom: 15px;">
+            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                <input type="checkbox" name="trigger_ansible" value="true">
+                <span>Run Ansible (configure_new_vms.yml) after apply</span>
+            </label>
+        </div>
+
+        <button type="submit" class="btn btn-primary"
+                {% if not jenkins_status.available %}disabled{% endif %}
+                onclick="return confirm('Are you sure you want to apply this plan to {{ plan.environment }}?')">
+            Approve &amp; Apply
+        </button>
+    </form>
+</div>
+{% endif %}
+
+<div class="card">
+    <h2>Plan Output</h2>
+    <pre class="plan-output">{{ plan.plan_text }}</pre>
+</div>
+{% endblock %}

@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: terraform-viewer
+  namespace: tfplan-system
+  labels:
+    app: terraform-viewer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: terraform-viewer
+  template:
+    metadata:
+      labels:
+        app: terraform-viewer
+    spec:
+      imagePullSecrets:
+        - name: ecr-creds
+      containers:
+        - name: terraform-viewer
+          image: 123456789012.dkr.ecr.us-west-2.amazonaws.com/terraform-plan-viewer:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+          env:
+            - name: S3_BUCKET
+              value: "example-terraform-plans"
+            - name: S3_REGION
+              value: "us-west-2"
+            - name: JENKINS_URL
+              value: "http://192.0.2.20:8080"
+            - name: JENKINS_USER
+              value: "deploy"
+            - name: JENKINS_JOB
+              value: "homelab-terraform"
+            - name: DJANGO_ALLOWED_HOSTS
+              value: "*"
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: terraform-viewer-secrets
+                  key: AWS_ACCESS_KEY_ID
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: terraform-viewer-secrets
+                  key: AWS_SECRET_ACCESS_KEY
+            - name: JENKINS_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: terraform-viewer-secrets
+                  key: JENKINS_TOKEN
+            - name: DJANGO_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: terraform-viewer-secrets
+                  key: DJANGO_SECRET_KEY
+          livenessProbe:
+            httpGet:
+              path: /health/
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health/
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"

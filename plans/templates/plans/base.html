@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Terraform Plans{% endblock %}</title>
+    <style>
+        :root {
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --bg-tertiary: #0f3460;
+            --text-primary: #eee;
+            --text-secondary: #aaa;
+            --accent: #e94560;
+            --success: #4ade80;
+            --warning: #fbbf24;
+            --error: #ef4444;
+            --pending: #60a5fa;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: var(--bg-secondary);
+            padding: 15px 20px;
+            border-bottom: 2px solid var(--accent);
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        header a {
+            color: var(--text-primary);
+            text-decoration: none;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-pending { background: var(--pending); color: #000; }
+        .badge-approved { background: var(--warning); color: #000; }
+        .badge-applied { background: var(--success); color: #000; }
+        .badge-failed { background: var(--error); color: #fff; }
+        .badge-applying { background: var(--warning); color: #000; }
+
+        .staleness-ok { color: var(--success); }
+        .staleness-warning { color: var(--warning); }
+        .staleness-critical { color: var(--error); }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: opacity 0.2s;
+        }
+
+        .btn:hover { opacity: 0.9; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .btn-primary { background: var(--accent); color: #fff; }
+        .btn-secondary { background: var(--bg-tertiary); color: #fff; }
+
+        .card {
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card h2 {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            color: var(--accent);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--bg-tertiary);
+        }
+
+        th {
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+        }
+
+        a {
+            color: var(--accent);
+        }
+
+        pre {
+            background: var(--bg-primary);
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+
+        .plan-output {
+            font-family: 'Consolas', 'Monaco', monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        /* Terraform syntax highlighting */
+        .tf-add { color: var(--success); }
+        .tf-remove { color: var(--error); }
+        .tf-change { color: var(--warning); }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .meta-item {
+            background: var(--bg-tertiary);
+            padding: 15px;
+            border-radius: 5px;
+        }
+
+        .meta-item label {
+            display: block;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            margin-bottom: 5px;
+        }
+
+        .meta-item span {
+            font-weight: 500;
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .alert-warning {
+            background: rgba(251, 191, 36, 0.2);
+            border-left: 4px solid var(--warning);
+        }
+
+        .alert-error {
+            background: rgba(239, 68, 68, 0.2);
+            border-left: 4px solid var(--error);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1><a href="/">Terraform Plan Viewer</a></h1>
+        </div>
+    </header>
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>
