@@ -1,24 +1,34 @@
-direction: down
+# Renders only inside the N9N d2 pipeline (filer icon library + lib/style.d2); docs/diagrams/workflow.png is the published image.
+...@../../lib/style.d2
+...@/mnt/n9n/assets/icons/d2/aws.d2
+...@/mnt/n9n/assets/icons/d2/simple.d2
+...@/mnt/n9n/assets/icons/d2/tabler.d2
 
-plan: "Jenkins plan run\n(terraform plan)"
+vars: {d2-config: {layout-engine: elk}}
 
-s3: "S3 bucket\n<environment>/<timestamp>/\nplan.txt, metadata.json, status.json" {shape: cylinder}
+direction: right
 
-viewer: "terraform-plan-viewer (Django, no database, no auth)" {
-  direction: down
-  dash: "/\nenvironments, latest plan,\nlast 5 plans"
-  detail: "/plan/<env>/<ts>/\nfull plan text, metadata,\nstaleness banner (1 h / 24 h)"
-  approve: "POST .../approve/\nonly if status is pending or failed"
-  dash -> detail -> approve
+title: "terraform-plan-viewer — review a saved plan, then approve the apply" {class: title}
+
+plan: "Jenkins plan run\n(terraform plan)" {class: [svc; simple-jenkins]}
+
+s3: "S3 bucket\n<environment>/\n<timestamp>/\nplan.txt,\nmetadata.json,\nstatus.json" {class: [svc; aws-amazonsimplestorageservice]}
+
+viewer: "terraform-plan-viewer\n(Django, no database, no auth)" {
+  class: zone
+  dash: "/\nenvironments,\nlatest plan,\nlast 5 plans" {class: [svc; tabler-layout-dashboard]}
+  detail: "/plan/<env>/<ts>/\nfull plan text,\nmetadata,\nstaleness\nbanner\n(1 h / 24 h)" {class: [svc; tabler-file-text]}
+  approve: "POST .../approve/\nonly if status is\npending or failed;\nback to pending if\nthe trigger fails" {class: [svc; tabler-circle-check]}
+  dash -> detail -> approve {class: flow}
 }
 
-operator: "operator" {shape: person}
+operator: "operator" {class: [svc; tabler-user]}
 
-apply: "Jenkins apply job\nACTION=apply-saved\nENVIRONMENT, PLAN_ID, TRIGGER_ANSIBLE"
+apply: "Jenkins apply job\nACTION=apply-saved\nENVIRONMENT,\nPLAN_ID,\nTRIGGER_ANSIBLE" {class: [svc; simple-jenkins]}
 
-plan -> s3: "upload plan + status pending"
-s3 -> viewer.dash: "list / read"
-operator -> viewer.dash: "browse"
-viewer.approve -> s3: "status.json = approved\n(back to pending if the trigger fails)"
-viewer.approve -> apply: "buildWithParameters"
-s3 -> apply: "saved plan (PLAN_ID)" {style.stroke-dash: 3}
+plan -> s3: "upload plan +\nstatus pending" {class: flow}
+s3 -> viewer.dash: "list / read" {class: flow}
+operator -> viewer.dash: "browse" {class: flow}
+s3 <-> viewer.approve: "status.json =\napproved" {class: flow; target-arrowhead.shape: none}
+viewer.approve -> apply: "buildWithParameters" {class: flow}
+s3 -> apply: "saved plan (PLAN_ID)" {class: async}
